@@ -15,6 +15,7 @@ interface QuoteDetailsProps {
   tokenIn: TokenInfo;
   tokenOut: TokenInfo;
   onSelectPool: (pool: PoolAssessment) => void;
+  embedded?: boolean;
 }
 
 function formatToken(wei: bigint, decimals: number): string {
@@ -53,9 +54,10 @@ export default function QuoteDetails({
   tokenIn,
   tokenOut,
   onSelectPool,
+  embedded = false,
 }: QuoteDetailsProps) {
   return (
-    <div className="px-5 md:px-0 md:max-w-[480px] mx-auto w-full space-y-3">
+    <div className={`mx-auto w-full space-y-3 ${embedded ? 'px-0 max-w-full' : 'px-5 md:px-0 md:max-w-[480px]'}`}>
       <AnimatePresence mode="wait">
         {loading && (
           <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -213,7 +215,7 @@ function PoolCard({
       <div className="flex items-center gap-2">
         <div className="text-right">
           <p className="text-[11px] font-medium text-text-primary">{formatToken(pool.output, tokenOut.decimals)}</p>
-          <p className="text-[10px] text-text-muted">{pool.eligible ? `Score ${Number(pool.score).toLocaleString()}` : ''}</p>
+          <p className="text-[10px] text-text-muted">{pool.eligible ? `Score ${formatToken(pool.score, tokenOut.decimals)}` : ''}</p>
         </div>
         {isFetchingPath && <Loader2 size={12} className="text-accent-cyan animate-spin shrink-0" />}
       </div>

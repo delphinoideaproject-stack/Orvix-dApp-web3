@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Lock,
   ChevronUp,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { SwapPage } from './SwapPage';
@@ -69,6 +71,7 @@ export function TokenDetailPage({
   onSwap: () => void;
 }) {
   const [isTradeOpen, setIsTradeOpen] = useState(false);
+  const [isChartOpen, setIsChartOpen] = useState(true);
   const [loadingOnChain, setLoadingOnChain] = useState(true);
   const [livePrice, setLivePrice] = useState(token.price);
   const [liveLiquidity, setLiveLiquidity] = useState('$284,910');
@@ -87,6 +90,58 @@ export function TokenDetailPage({
   ];
   const [slideIndex, setSlideIndex] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Swipe / Drag controls for cover images
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      dragStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      isDragging.current = true;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging.current || !dragStartPos.current) return;
+    isDragging.current = false;
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - dragStartPos.current.x;
+      const deltaY = e.changedTouches[0].clientY - dragStartPos.current.y;
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+        if (deltaX > 0) {
+          // Swipe right -> prev slide
+          setSlideIndex((prev) => (prev === 0 ? defaultCovers.length - 1 : prev - 1));
+        } else {
+          // Swipe left -> next slide
+          setSlideIndex((prev) => (prev === defaultCovers.length - 1 ? 0 : prev + 1));
+        }
+      }
+    }
+    dragStartPos.current = null;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    isDragging.current = true;
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging.current || !dragStartPos.current) return;
+    isDragging.current = false;
+    const deltaX = e.clientX - dragStartPos.current.x;
+    const deltaY = e.clientY - dragStartPos.current.y;
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+      if (deltaX > 0) {
+        // Swipe right -> prev slide
+        setSlideIndex((prev) => (prev === 0 ? defaultCovers.length - 1 : prev - 1));
+      } else {
+        // Swipe left -> next slide
+        setSlideIndex((prev) => (prev === defaultCovers.length - 1 ? 0 : prev + 1));
+      }
+    }
+    dragStartPos.current = null;
+  };
 
   // Scroll listener for shrinking profile photo
   useEffect(() => {
@@ -283,38 +338,53 @@ export function TokenDetailPage({
 
     setChartDot({ cx: svgX, cy: svgY });
 
-    const randomPrice = (0.00040 + Math.random() * 0.00006).toFixed(5);
+    const cleanPriceStr = livePrice.replace('$', '').replace(/,/g, '');
+    const currentPriceNum = parseFloat(cleanPriceStr) || 0.00042;
+    // Generate a small variation (e.g., -5% to +5%)
+    const variation = (Math.random() - 0.5) * 0.1;
+    const computedPrice = currentPriceNum * (1 + variation);
+    const formattedPrice = computedPrice < 0.0001 
+      ? `$${computedPrice.toExponential(4)}` 
+      : `$${computedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: computedPrice < 1 ? 5 : 2 })}`;
+
     setTooltipData({
       show: true,
       x: Math.max(50, Math.min(rect.width - 50, x)),
-      price: `$${randomPrice}`
+      price: formattedPrice
     });
-
-    setNeonActive(true);
 
     if (chartTimeoutRef.current) clearTimeout(chartTimeoutRef.current);
     chartTimeoutRef.current = setTimeout(() => {
       setTooltipData(prev => ({ ...prev, show: false }));
-      setNeonActive(false);
     }, 1500);
   };
 
   const toggleTrade = () => {
-    setIsTradeOpen(!isTradeOpen);
-    if (!isTradeOpen) {
+    const nextState = !isTradeOpen;
+    setIsTradeOpen(nextState);
+    if (nextState) {
+      setIsChartOpen(false); // Auto close chart
       setTimeout(() => {
-        window.scrollTo({ top: window.scrollY + 280, behavior: 'smooth' });
+        window.scrollTo({ top: window.scrollY + 200, behavior: 'smooth' });
       }, 100);
+    } else {
+      setIsChartOpen(true); // Auto reopen chart when closing trade
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-transparent text-zinc-900 dark:text-zinc-100 font-sans pb-24 max-w-2xl mx-auto relative overflow-x-hidden">
+    <div className="w-full min-h-screen bg-transparent text-zinc-900 dark:text-zinc-100 font-sans pb-24 max-w-2xl mx-auto relative">
 
       {/* ===== HEADER / COVER BANNER SLIDER ===== */}
-      <div className={cn("fb-cover-wrapper relative w-full bg-zinc-100 dark:bg-[#050b14] rounded-b-3xl overflow-hidden shadow-lg border-b border-zinc-200 dark:border-white/10", isScrolled && "scrolled")}>
+      <div className={cn("fb-cover-wrapper relative w-full bg-zinc-100 dark:bg-[#050b14] rounded-b-3xl shadow-lg border-b border-zinc-200 dark:border-white/10", isScrolled && "scrolled")}>
         
-        <div className="cover-slider-wrapper relative w-full aspect-[820/312] overflow-hidden bg-gradient-to-br from-zinc-200 via-zinc-100 to-zinc-200 dark:from-[#0a1a2e] dark:via-[#081525] dark:to-[#050b14] border-b border-zinc-200 dark:border-[#5cceff]/10">
+        <div 
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          className="cover-slider-wrapper relative w-full aspect-[820/312] overflow-hidden bg-gradient-to-br from-zinc-200 via-zinc-100 to-zinc-200 dark:from-[#0a1a2e] dark:via-[#081525] dark:to-[#050b14] border-b border-zinc-200 dark:border-[#5cceff]/10 rounded-b-3xl group select-none cursor-grab active:cursor-grabbing"
+        >
           {/* Slider Track */}
           <div 
             className="cover-slider-track flex w-full h-full transition-transform duration-400 ease-out"
@@ -325,10 +395,35 @@ export function TokenDetailPage({
                 key={idx} 
                 src={imgUrl} 
                 alt={`Cover ${idx + 1}`}
+                draggable={false}
                 className="slide flex-shrink-0 w-full h-full object-cover select-none pointer-events-none" 
               />
             ))}
           </div>
+
+          {/* Slider Manual Navigation Left/Right Arrows */}
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSlideIndex((prev) => (prev === 0 ? defaultCovers.length - 1 : prev - 1));
+            }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/35 hover:bg-black/60 text-white backdrop-blur-md transition-all z-20 cursor-pointer flex items-center justify-center border border-white/10 shadow-sm"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSlideIndex((prev) => (prev === defaultCovers.length - 1 ? 0 : prev + 1));
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/35 hover:bg-black/60 text-white backdrop-blur-md transition-all z-20 cursor-pointer flex items-center justify-center border border-white/10 shadow-sm"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
 
           {/* Dots Indicator */}
           <div className="slider-dots absolute bottom-3 right-4 flex gap-1.5 z-15">
@@ -338,160 +433,190 @@ export function TokenDetailPage({
                 onClick={() => setSlideIndex(idx)}
                 className={cn(
                   "slider-dot h-1.5 rounded-full transition-all duration-300 cursor-pointer bg-white/50 dark:bg-white/30",
-                  slideIndex === idx ? "w-4.5 bg-white rounded-md" : "w-1.5"
+                  slideIndex === idx ? "w-5 bg-white rounded-md" : "w-1.5"
                 )}
               />
             ))}
           </div>
         </div>
 
-        {/* Profile Token Logo (Shrinks on scroll) */}
-        <div className={cn(
-          "profile-photo absolute left-4 transition-all duration-300 z-10 bg-white dark:bg-[#050b14] border-2 border-zinc-200 dark:border-[#5cceff]/30 rounded-full flex items-center justify-center p-1 shadow-lg overflow-hidden",
-          isScrolled ? "w-7 h-7 bottom-2 left-3 border" : "w-[72px] h-[72px] -bottom-2 shadow-xl"
-        )}>
+        {/* Profile Token Logo (Centered horizontally & overlapping 50% bottom of header, no shrinking on scroll) */}
+        <div className="profile-photo absolute left-1/2 -translate-x-1/2 -bottom-[40px] w-[80px] h-[80px] z-10 flex items-center justify-center">
           <TokenLogo 
             tokenId={token.logo || token.id} 
-            className="w-full h-full object-contain rounded-full" 
+            className="w-full h-full object-contain drop-shadow-md" 
           />
         </div>
 
         {/* Action Header Buttons */}
-        <div className="cover-actions absolute top-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-auto">
+        <div className="cover-actions absolute top-3 right-3 flex items-center justify-end z-20 pointer-events-auto">
           <button 
-            onClick={onBack} 
-            className="bare-icon p-2 text-zinc-700 dark:text-white/80 hover:text-zinc-900 dark:hover:text-white transition-all bg-white/80 dark:bg-black/40 backdrop-blur-md rounded-full border border-zinc-200 dark:border-white/10 shadow-sm"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('orvix-open-share', { detail: token }))}
-            className="bare-icon p-2 text-zinc-700 dark:text-white/80 hover:text-zinc-900 dark:hover:text-white transition-all bg-white/80 dark:bg-black/40 backdrop-blur-md rounded-full border border-zinc-200 dark:border-white/10 shadow-sm"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent('orvix-open-share', { detail: token }));
+            }}
+            className="flex items-center justify-center p-2 text-white hover:scale-110 transition-all bg-black/30 hover:bg-black/65 backdrop-blur-md rounded-full border border-white/10 shadow-md cursor-pointer"
             aria-label="Share"
           >
-            <Share2 className="w-4.5 h-4.5" />
+            <Share2 className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* ===== MAIN CONTENT CONTAINER ===== */}
-      <div className="px-4 pt-4 pb-12 space-y-4">
+      <div className="px-4 pt-16 sm:pt-20 pb-12 space-y-4">
         
         {/* TOKEN HEADER IDENTITY */}
-        <div className="token-header flex items-center gap-3 pt-1">
-          <div>
-            <div className="token-name text-2xl font-black text-zinc-900 dark:text-white leading-tight">
-              {token.name || 'ORVIX Token'}
-            </div>
-            <div className="token-sub text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 flex items-center gap-2">
-              <span>Listed {token.listedAt || '2 minutes ago'}</span>
-            </div>
+        <div className="token-header flex flex-col items-center text-center pt-1 space-y-1">
+          <div className="token-name text-2xl font-black text-zinc-900 dark:text-white leading-tight font-['Inter']">
+            {token.name || 'ORVIX Token'}
           </div>
         </div>
 
-        {/* ===== CHART AREA — PREMIUM TRADING LAYOUT ===== */}
-        <div className="chart-area bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 mt-2 text-zinc-900 dark:text-white shadow-sm backdrop-blur-sm">
-          {/* Chart Header */}
-          <div className="chart-header flex items-center justify-between mb-2">
-            <div className="chart-pair flex flex-col">
-              <span className="pair-label text-xs font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">
-                {liveBasePair}
-              </span>
-              <span className={cn("pair-price text-2xl font-bold text-zinc-900 dark:text-white transition-all duration-200 font-mono", neonActive && "neon-text")}>
-                {livePrice}
-              </span>
-            </div>
-
-            <div className="chart-change flex flex-col items-end">
-              <span className={cn("change-value text-xl font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 transition-all duration-200", neonActive && "neon-text-green")}>
-                <svg className="w-4.5 h-4.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m5 12 7-7 7 7"/>
-                  <path d="M12 19V5"/>
-                </svg>
-                {Math.abs(token.priceChange || 70)}%
-              </span>
-              <span className="change-label text-[11px] text-zinc-500 dark:text-zinc-400 font-medium -mt-0.5">
-                24h change
-              </span>
-            </div>
-          </div>
-
-          {/* Chart Canvas / SVG Container */}
-          <div 
-            className="chart-container relative w-full bg-zinc-100/70 dark:bg-black/60 rounded-xl py-1 min-h-[180px] cursor-crosshair select-none"
-            onClick={handleChartClick}
-          >
-            {/* Interactive Tooltip */}
-            {tooltipData.show && (
-              <div 
-                className="absolute bg-zinc-900 text-white dark:bg-black border border-zinc-700 dark:border-white/20 text-[11px] px-3 py-1.5 rounded-md -top-2 -translate-x-1/2 whitespace-nowrap pointer-events-none shadow-xl z-20 font-mono"
-                style={{ left: `${tooltipData.x}px` }}
-              >
-                July 26, 2026<br />
-                <span className="price font-bold text-cyan-400 dark:text-[#5cceff]">{tooltipData.price}</span>
-              </div>
-            )}
-
-            <svg viewBox="0 0 340 180" preserveAspectRatio="none" className="block w-full h-auto">
-              <rect width="340" height="180" fill="transparent" rx="8" />
-              
-              {/* Horizontal Gridlines */}
-              <line x1="0" y1="45" x2="340" y2="45" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              <line x1="0" y1="90" x2="340" y2="90" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              <line x1="0" y1="135" x2="340" y2="135" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              
-              {/* Vertical Gridlines */}
-              <line x1="68" y1="0" x2="68" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              <line x1="136" y1="0" x2="136" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              <line x1="204" y1="0" x2="204" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              <line x1="272" y1="0" x2="272" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
-              
-              <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              
-              {/* Area fill */}
-              <path d="M0,155 Q60,130 120,135 Q180,70 240,95 Q290,100 340,60 L340,180 L0,180 Z" fill="url(#chartGradient)" />
-              
-              {/* Line chart */}
-              <path d="M0,155 Q60,130 120,135 Q180,70 240,95 Q290,100 340,60" fill="none" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" />
-              
-              {/* Dot marker */}
-              <circle cx={chartDot.cx} cy={chartDot.cy} r="3" fill="#06b6d4" />
-              <circle cx={chartDot.cx} cy={chartDot.cy} r="6" fill="rgba(6,182,212,0.2)" />
+        {/* SOCIAL ICONS */}
+        <div className="social-icons flex items-center justify-center gap-5 mt-2 pt-2">
+          <a href={token.website || "https://orvix.io"} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="Website">
+            <Globe className="w-5 h-5 stroke-current" />
+          </a>
+          <a href={token.x || `https://x.com/orvix_${token.symbol?.toLowerCase() || 'token'}`} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="X / Twitter">
+            <svg className="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
-          </div>
+          </a>
+          <a href={token.telegram || `https://t.me/orvix_${token.symbol?.toLowerCase() || 'token'}`} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="Telegram">
+            <Send className="w-5 h-5 stroke-current" />
+          </a>
+          <a href={token.github || `https://github.com/orvix-labs/${token.symbol?.toLowerCase() || 'token'}`} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="GitHub">
+            <Github className="w-5 h-5 stroke-current" />
+          </a>
+          <a href={token.documentation || "https://docs.orvix.io"} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="Whitepaper / Docs">
+            <BookOpen className="w-5 h-5 stroke-current" />
+          </a>
         </div>
 
-        {/* MARKET CAP & LIQUIDITY QUICK CARDS */}
-        <div className="flex justify-between gap-3 mt-4">
-          <div className="flex-1 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-white/10 rounded-2xl p-3.5 text-zinc-900 dark:text-white shadow-sm backdrop-blur-sm">
-            <div className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-1">Market Cap</div>
-            <div className="text-[21px] font-extrabold tracking-tight font-sans text-zinc-900 dark:text-white">
-              {liveMcap}
-            </div>
+        {/* DESCRIPTION SECTION */}
+        <div className="text-center pt-2 pb-4 border-b border-zinc-100 dark:border-white/5">
+          <p className="text-[13px] text-zinc-600 dark:text-white/70 leading-relaxed font-medium max-w-lg mx-auto">
+            {token.name || 'Orvix'} ({token.symbol || 'ORX'}) is a decentralized token built on the BNB Smart Chain. Designed to foster community-driven ecosystems and facilitate seamless on-chain transactions within the Orvix platform.
+          </p>
+        </div>
+
+        {/* ===== CHART AREA — WITH SMOOTH COLLAPSE / EXPAND ===== */}
+        <div className="space-y-2 mt-2">
+          {/* Chart Header Toggle */}
+          <div className="flex justify-end items-center px-1">
+            <button
+              onClick={() => setIsChartOpen(!isChartOpen)}
+              className="text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5"
+              title={isChartOpen ? "Close Chart" : "Open Chart"}
+            >
+              <motion.div
+                animate={{ rotate: isChartOpen ? 0 : 180 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronUp className="w-5 h-5" />
+              </motion.div>
+            </button>
           </div>
-          <div className="flex-1 bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-white/10 rounded-2xl p-3.5 text-zinc-900 dark:text-white shadow-sm backdrop-blur-sm">
-            <div className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 mb-1">Liquidity</div>
-            <div className="text-[21px] font-extrabold tracking-tight font-sans text-zinc-900 dark:text-white">
-              {liveLiquidity}
-            </div>
-          </div>
+
+          <AnimatePresence initial={false}>
+            {isChartOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="chart-area bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 text-zinc-900 dark:text-white shadow-sm backdrop-blur-sm">
+                  {/* Chart Header */}
+                  <div className="chart-header flex items-center justify-between mb-2">
+                    <div className="chart-pair flex flex-col">
+                      <span className="pair-label text-xs font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider font-['Inter']">
+                        {liveBasePair}
+                      </span>
+                      <span className="pair-price text-2xl font-bold text-zinc-900 dark:text-white font-['Inter']">
+                        {livePrice}
+                      </span>
+                    </div>
+
+                    <div className="chart-change flex flex-col items-end">
+                      <span className="change-value text-xl font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 font-['Inter']">
+                        <svg className="w-4.5 h-4.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m5 12 7-7 7 7"/>
+                          <path d="M12 19V5"/>
+                        </svg>
+                        {Math.abs(token.priceChange || 70)}%
+                      </span>
+                      <span className="change-label text-[11px] text-zinc-500 dark:text-zinc-400 font-medium -mt-0.5 font-['Inter']">
+                        24h change
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Chart Canvas / SVG Container */}
+                  <div 
+                    className="chart-container relative w-full bg-zinc-100/70 dark:bg-black/60 rounded-xl py-1 min-h-[180px] cursor-crosshair select-none"
+                    onClick={handleChartClick}
+                  >
+                    {/* Interactive Tooltip */}
+                    {tooltipData.show && (
+                      <div 
+                        className="absolute bg-white text-black border border-zinc-200/80 text-[11px] px-3 py-1.5 rounded-xl -top-14 -translate-x-1/2 whitespace-nowrap pointer-events-none shadow-lg z-20 font-['Inter'] font-light flex flex-col text-left gap-0.5 leading-tight"
+                        style={{ left: `${tooltipData.x}px` }}
+                      >
+                        <span className="font-semibold text-zinc-900">{tooltipData.price}</span>
+                        <span className="text-[10px] text-zinc-500">Listed {token.listedAt || '2 minutes ago'}</span>
+                      </div>
+                    )}
+
+                    <svg viewBox="0 0 340 180" preserveAspectRatio="none" className="block w-full h-auto">
+                      <rect width="340" height="180" fill="transparent" rx="8" />
+                      
+                      {/* Horizontal Gridlines */}
+                      <line x1="0" y1="45" x2="340" y2="45" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      <line x1="0" y1="90" x2="340" y2="90" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      <line x1="0" y1="135" x2="340" y2="135" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      
+                      {/* Vertical Gridlines */}
+                      <line x1="68" y1="0" x2="68" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      <line x1="136" y1="0" x2="136" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      <line x1="204" y1="0" x2="204" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      <line x1="272" y1="0" x2="272" y2="180" stroke="currentColor" className="text-zinc-300 dark:text-white/10" strokeWidth="0.5" />
+                      
+                      <defs>
+                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {/* Area fill */}
+                      <path d="M0,155 Q60,130 120,135 Q180,70 240,95 Q290,100 340,60 L340,180 L0,180 Z" fill="url(#chartGradient)" />
+                      
+                      {/* Line chart */}
+                      <path d="M0,155 Q60,130 120,135 Q180,70 240,95 Q290,100 340,60" fill="none" stroke="#06b6d4" strokeWidth="2" strokeLinecap="round" />
+                      
+                      {/* Dot marker */}
+                      <circle cx={chartDot.cx} cy={chartDot.cy} r="3" fill="#06b6d4" />
+                      <circle cx={chartDot.cx} cy={chartDot.cy} r="6" fill="rgba(6,182,212,0.2)" />
+                    </svg>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* TRADE NOW BUTTON */}
         <button 
           onClick={toggleTrade}
-          className="btn-trade w-full mt-4 py-4 rounded-2xl font-bold text-[16px] tracking-wide transition-all active:scale-[0.98] border border-zinc-300 dark:border-white/10 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white cursor-pointer shadow-md flex items-center justify-center gap-2"
+          className="w-full mt-4 py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] border border-[#555555] dark:border-[#CCCCCC] bg-zinc-800 text-white hover:bg-zinc-900 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700 cursor-pointer shadow-sm flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] font-black"
         >
           {isTradeOpen ? (
             <>
-              CLOSE TRADE <ChevronUp className="w-5 h-5" />
+              CLOSE TRADE <ChevronUp className="w-4 h-4" />
             </>
           ) : (
             'TRADE NOW'
@@ -508,58 +633,12 @@ export function TokenDetailPage({
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-2xl p-3 md:p-4 shadow-xl my-2 text-zinc-900 dark:text-white">
+              <div className="w-full my-2 text-zinc-900 dark:text-white">
                 <SwapPage embedded={true} preselectedToken={token} />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* SOCIAL ICONS */}
-        <div className="social-icons flex items-center justify-center gap-5 mt-4 pt-2">
-          {token.website && (
-            <a href={token.website} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="Website">
-              <Globe className="w-5 h-5 stroke-current" />
-            </a>
-          )}
-          {token.x && (
-            <a href={token.x} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="X / Twitter">
-              <svg className="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-            </a>
-          )}
-          {token.telegram && (
-            <a href={token.telegram} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="Telegram">
-              <Send className="w-5 h-5 stroke-current" />
-            </a>
-          )}
-          {token.github && (
-            <a href={token.github} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="GitHub">
-              <Github className="w-5 h-5 stroke-current" />
-            </a>
-          )}
-          {token.documentation && (
-            <a href={token.documentation} target="_blank" rel="noreferrer" className="bare-icon text-zinc-600 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white transition-colors p-2 bg-zinc-100 dark:bg-white/5 rounded-full border border-zinc-200 dark:border-white/10" title="Whitepaper / Docs">
-              <BookOpen className="w-5 h-5 stroke-current" />
-            </a>
-          )}
-        </div>
-
-        {/* DESCRIPTION SECTION */}
-        <div>
-          <div className="section-label text-xs font-bold text-zinc-500 dark:text-white/40 uppercase tracking-widest mt-6 mb-2">
-            Description
-          </div>
-          <p className="text-[13px] text-zinc-700 dark:text-white/80 leading-relaxed font-medium">
-            {token.name || 'Orvix'} ({token.symbol || 'ORX'}) is a decentralized token built on the BNB Smart Chain. Designed to foster community-driven ecosystems and facilitate seamless on-chain transactions within the Orvix platform.
-          </p>
-          <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-white/5">
-            <p className="text-[10px] text-zinc-500 dark:text-white/30 leading-relaxed italic font-medium">
-              Note: The content above is information provided by the project creator and does not constitute a reference or recommendation from Orvix.
-            </p>
-          </div>
-        </div>
 
         {/* MARKET DATA SECTION */}
         <div>

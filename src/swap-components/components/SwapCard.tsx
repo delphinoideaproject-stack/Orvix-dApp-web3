@@ -32,10 +32,12 @@ function inputFontSize(value: string): string {
 
 export default function SwapCard({
   preselectedToken,
-  onClearPreselectedToken
+  onClearPreselectedToken,
+  embedded = false,
 }: {
   preselectedToken?: Token | null;
   onClearPreselectedToken?: () => void;
+  embedded?: boolean;
 } = {}) {
   const { address, connected, provider, connect } = useWallet();
   const { settings, updateSettings } = useSettings();
@@ -70,11 +72,23 @@ export default function SwapCard({
         };
         setTokenOut(customToken);
       }
+
+      if (preselectedToken.pair && preselectedToken.pair.includes('/')) {
+        const [_, quoteSymbol] = preselectedToken.pair.split('/');
+        const quoteMatch = VERIFIED_TOKENS.find(
+          (t) => t.symbol.toUpperCase() === quoteSymbol.toUpperCase()
+        );
+        if (quoteMatch) {
+          setTokenIn(quoteMatch);
+        }
+      }
+
       onClearPreselectedToken?.();
     }
   }, [preselectedToken, onClearPreselectedToken]);
 
   const [customSlippageInput, setCustomSlippageInput] = useState(() => {
+    if (settings.slippageAuto) return '';
     const isPreset = [10, 50, 100].includes(settings.slippageBps);
     return isPreset ? '' : (settings.slippageBps / 100).toString();
   });
@@ -90,12 +104,17 @@ export default function SwapCard({
     const parsed = parseFloat(finalValue);
     if (!isNaN(parsed) && parsed > 0 && parsed <= 50) {
       const bps = Math.round(parsed * 100);
-      updateSettings({ slippageBps: bps });
+      updateSettings({ slippageBps: bps, slippageAuto: false });
     }
   };
 
   const handlePresetSlippage = (bps: number) => {
-    updateSettings({ slippageBps: bps });
+    updateSettings({ slippageBps: bps, slippageAuto: false });
+    setCustomSlippageInput('');
+  };
+
+  const handleAutoSlippage = () => {
+    updateSettings({ slippageBps: 50, slippageAuto: true });
     setCustomSlippageInput('');
   };
 
@@ -168,13 +187,13 @@ export default function SwapCard({
       resetPools();
       return;
     }
-    if (!amountIn || parseFloat(amountIn) <= 0 || !address) {
+    if (!amountIn || parseFloat(amountIn) <= 0) {
       resetPools();
       return;
     }
 
     debounceRef.current = setTimeout(() => {
-      fetchPools(tokenIn, tokenOut, amountIn, address);
+      fetchPools(tokenIn, tokenOut, amountIn, address || '');
     }, 350);
 
     return () => {
@@ -354,23 +373,53 @@ export default function SwapCard({
   }[btn.variant];
 
   return (
-    <div className="relative z-10 px-5 md:px-0 md:max-w-[480px] mx-auto w-full">
+    <div className={`relative z-10 mx-auto w-full ${embedded ? 'px-0 max-w-full' : 'px-5 md:px-0 md:max-w-2xl'}`}>
       {/* From */}
       <div className="p-5 rounded-3xl border border-border bg-white/[0.03]">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-text-secondary">From</span>
-          <div className="flex items-center gap-2">
-            {balanceIn !== null && connected && (
-              <span className="text-xs text-text-muted">Balance: {parseFloat(balanceIn).toFixed(4)}</span>
-            )}
-            {connected && (
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="text-xs text-text-muted">
+              Balance: {connected && balanceIn !== null ? parseFloat(balanceIn).toFixed(4) : "0"}
+            </span>
+            <div className="flex items-center gap-1.5">
               <button
-                onClick={handleMax}
-                className="text-xs font-medium text-accent-cyan hover:brightness-125 transition-all"
+                onClick={() => {
+                  const bal = connected && balanceIn ? parseFloat(balanceIn) : 0;
+                  setAmountIn((bal * 0.25).toString());
+                }}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-white/60 transition-colors"
+              >
+                25%
+              </button>
+              <button
+                onClick={() => {
+                  const bal = connected && balanceIn ? parseFloat(balanceIn) : 0;
+                  setAmountIn((bal * 0.5).toString());
+                }}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-white/60 transition-colors"
+              >
+                50%
+              </button>
+              <button
+                onClick={() => {
+                  const bal = connected && balanceIn ? parseFloat(balanceIn) : 0;
+                  setAmountIn((bal * 0.75).toString());
+                }}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-white/60 transition-colors"
+              >
+                75%
+              </button>
+              <button
+                onClick={() => {
+                  const bal = connected && balanceIn ? parseFloat(balanceIn) : 0;
+                  setAmountIn(bal.toString());
+                }}
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-white/60 transition-colors"
               >
                 MAX
               </button>
-            )}
+            </div>
           </div>
         </div>
 
@@ -412,6 +461,8 @@ export default function SwapCard({
             className={`flex-1 font-semibold text-text-secondary min-w-0 truncate ${inputFontSize(
               swapMode === 'swap' && selectedPool
                 ? (Number(selectedPool.output) / 10 ** tokenOut.decimals).toString()
+                : (swapMode === 'wrap' || swapMode === 'unwrap') && amountIn
+                ? amountIn
                 : ''
             )}`}
           >
@@ -421,6 +472,8 @@ export default function SwapCard({
                 ).toLocaleString(undefined, { maximumFractionDigits: 6 })
               : swapMode === 'swap' && poolsLoading
               ? <span className="text-text-muted">...</span>
+              : (swapMode === 'wrap' || swapMode === 'unwrap') && amountIn
+              ? parseFloat(amountIn).toLocaleString(undefined, { maximumFractionDigits: 6 })
               : <span className="text-text-muted">0.0</span>
             }
           </div>
@@ -449,6 +502,7 @@ export default function SwapCard({
             tokenIn={tokenIn}
             tokenOut={tokenOut}
             onSelectPool={handlePoolSelect}
+            embedded={embedded}
           />
         </div>
       )}
@@ -469,7 +523,7 @@ export default function SwapCard({
             <span className="text-xs text-text-secondary">Slippage Tolerance</span>
           </div>
           <span className="text-xs font-medium text-text-primary">
-            {(settings.slippageBps / 100).toFixed(2).replace(/\.?0+$/, '')}%
+            {settings.slippageAuto ? 'Auto (0.5%)' : `${(settings.slippageBps / 100).toFixed(2).replace(/\.?0+$/, '')}%`}
           </span>
         </button>
         <AnimatePresence>
@@ -482,16 +536,28 @@ export default function SwapCard({
               className="overflow-hidden"
             >
               <div className="p-3 bg-white/[0.01] rounded-xl border border-border/30 mt-1 space-y-2">
-                <div className="flex gap-2 items-center">
+                <div className="grid grid-cols-5 gap-1 md:gap-1.5 items-center">
+                  {/* Auto button */}
+                  <button
+                    onClick={handleAutoSlippage}
+                    className={`py-2 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer text-center ${
+                      settings.slippageAuto
+                        ? 'bg-accent-cyan text-bg-primary font-bold'
+                        : 'bg-white/[0.03] text-text-secondary hover:bg-hover border border-border/50'
+                    }`}
+                  >
+                    Auto
+                  </button>
+
                   {[10, 50, 100].map((bps) => {
-                    const isSelected = settings.slippageBps === bps;
+                    const isSelected = !settings.slippageAuto && settings.slippageBps === bps;
                     return (
                       <button
                         key={bps}
                         onClick={() => handlePresetSlippage(bps)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                        className={`py-2 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer text-center ${
                           isSelected
-                            ? 'bg-accent-cyan text-bg-primary font-semibold'
+                            ? 'bg-accent-cyan text-bg-primary font-bold'
                             : 'bg-white/[0.03] text-text-secondary hover:bg-hover border border-border/50'
                         }`}
                       >
@@ -501,8 +567,8 @@ export default function SwapCard({
                   })}
                   
                   {/* Custom Input */}
-                  <div className={`flex-1 flex items-center bg-white/[0.03] border rounded-lg px-2 py-1.5 transition-colors ${
-                    ![10, 50, 100].includes(settings.slippageBps)
+                  <div className={`flex items-center bg-white/[0.03] border rounded-lg px-1 py-1.5 transition-colors ${
+                    !settings.slippageAuto && ![10, 50, 100].includes(settings.slippageBps)
                       ? 'border-[#555555] dark:border-[#CCCCCC]' 
                       : 'border-border/50 focus-within:border-[#555555] dark:focus-within:border-[#CCCCCC]'
                   }`}>
@@ -512,14 +578,14 @@ export default function SwapCard({
                       placeholder="Custom"
                       value={customSlippageInput}
                       onChange={(e) => handleCustomSlippageChange(e.target.value)}
-                      className="w-full bg-transparent text-xs font-medium text-text-primary focus:outline-none text-right pr-0.5"
+                      className="w-full bg-transparent text-[11px] font-semibold text-text-primary focus:outline-none text-right pr-0.5 min-w-0"
                     />
-                    <span className="text-xs text-text-muted font-medium select-none">%</span>
+                    <span className="text-[10px] text-text-muted font-medium select-none">%</span>
                   </div>
                 </div>
 
                 {/* Validation Warnings / Feedback */}
-                {settings.slippageBps < 5 && (
+                {!settings.slippageAuto && settings.slippageBps < 5 && (
                   <motion.div 
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -529,7 +595,7 @@ export default function SwapCard({
                     <span>Slippage is low. Your transaction may fail due to price volatility.</span>
                   </motion.div>
                 )}
-                {settings.slippageBps > 500 && (
+                {!settings.slippageAuto && settings.slippageBps > 500 && (
                   <motion.div 
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}

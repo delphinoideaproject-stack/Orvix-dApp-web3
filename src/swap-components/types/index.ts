@@ -55,6 +55,7 @@ export interface SwapSettings {
   treasury: string;
   integrator: string;
   backendUrl?: string;
+  slippageAuto?: boolean;
 }
 
 export type SwapStatus =

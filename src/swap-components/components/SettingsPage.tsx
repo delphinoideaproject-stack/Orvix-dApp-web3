@@ -98,20 +98,33 @@ export default function SettingsPage({ onBack }: { onBack: () => void }) {
         <div className="space-y-3">
           <div>
             <label className="block text-xs text-text-muted mb-2">Slippage Tolerance</label>
-            <div className="flex gap-2">
-              {[10, 50, 100, 300].map((bps) => (
-                <button
-                  key={bps}
-                  onClick={() => updateSettings({ slippageBps: bps })}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    settings.slippageBps === bps
-                      ? 'bg-accent-cyan text-bg-primary'
-                      : 'bg-white/[0.03] text-text-secondary hover:bg-hover border border-border'
-                  }`}
-                >
-                  {(bps / 100).toFixed(1)}%
-                </button>
-              ))}
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => updateSettings({ slippageBps: 50, slippageAuto: true })}
+                className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                  settings.slippageAuto
+                    ? 'bg-accent-cyan text-bg-primary'
+                    : 'bg-white/[0.03] text-text-secondary hover:bg-hover border border-border'
+                }`}
+              >
+                Auto
+              </button>
+              {[10, 50, 100, 300].map((bps) => {
+                const isSelected = !settings.slippageAuto && settings.slippageBps === bps;
+                return (
+                  <button
+                    key={bps}
+                    onClick={() => updateSettings({ slippageBps: bps, slippageAuto: false })}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                      isSelected
+                        ? 'bg-accent-cyan text-bg-primary'
+                        : 'bg-white/[0.03] text-text-secondary hover:bg-hover border border-border'
+                    }`}
+                  >
+                    {(bps / 100).toFixed(1)}%
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div>

@@ -78,79 +78,6 @@ export function useQuote() {
   const [selectingPool, setSelectingPool] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPools = useCallback(
-    async (tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn: string, userAddress: string) => {
-      if (!amountIn || parseFloat(amountIn) <= 0) {
-        setPools([]);
-        setSelectedPool(null);
-        setError(null);
-        return;
-      }
-
-      if (!userAddress) {
-        setError('Wallet not connected');
-        return;
-      }
-
-      // Reset previous results when token/amount changes
-      setPools([]);
-      setSelectedPool(null);
-      setLoading(true);
-      setError(null);
-
-      try {
-        const decimalsIn = tokenIn.decimals;
-        const amountInWei = toWeiAmount(amountIn, decimalsIn);
-
-        const backendUrl = settings.backendUrl || DEFAULT_BACKEND_URL;
-        const response = await fetch(`${backendUrl}/api/assess-pools`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            token_in: tokenIn.address,
-            token_out: tokenOut.address,
-            amount_in: amountInWei,
-            user_address: userAddress,
-            rpc_url: settings.rpcUrl, // power-user custom RPC, backend falls back to default if it fails
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to assess pools');
-        }
-
-        const data = await response.json();
-
-        const assessedPools: PoolAssessment[] = data.assessments.map((p: any) => ({
-          pool: p.pool,
-          output: BigInt(p.output),
-          liquidity: BigInt(p.liquidity),
-          priceImpact: BigInt(p.price_impact_bps),
-          score: BigInt(p.score),
-          eligible: p.eligible,
-          failReason: BigInt(p.fail_reason_code),
-          // path/amountOutMin/factory are NOT present yet — only populated
-          // once the user clicks this pool, via selectPool() below.
-        }));
-
-        setPools(assessedPools);
-
-        // Don't auto-select - user must click to select
-        setSelectedPool(null);
-      } catch (e) {
-        setPools([]);
-        setSelectedPool(null);
-        setError(isRateLimitError(e) ? 'RPC rate limited. Retrying with alternate node...' : parseBackendError(e));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [settings.backendUrl, settings.rpcUrl]
-  );
-
   /**
    * Called when the user clicks a pool from the Pool Assessment list.
    *
@@ -223,6 +150,86 @@ export function useQuote() {
       }
     },
     [settings.backendUrl, settings.slippageBps, settings.rpcUrl]
+  );
+
+  const fetchPools = useCallback(
+    async (tokenIn: TokenInfo, tokenOut: TokenInfo, amountIn: string, userAddress?: string) => {
+      if (!amountIn || parseFloat(amountIn) <= 0) {
+        setPools([]);
+        setSelectedPool(null);
+        setError(null);
+        return;
+      }
+
+      const addressToUse = userAddress || '0x0000000000000000000000000000000000000000';
+
+      // Reset previous results when token/amount changes
+      setPools([]);
+      setSelectedPool(null);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const decimalsIn = tokenIn.decimals;
+        const amountInWei = toWeiAmount(amountIn, decimalsIn);
+
+        const backendUrl = settings.backendUrl || DEFAULT_BACKEND_URL;
+        const response = await fetch(`${backendUrl}/api/assess-pools`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token_in: tokenIn.address,
+            token_out: tokenOut.address,
+            amount_in: amountInWei,
+            user_address: addressToUse,
+            rpc_url: settings.rpcUrl, // power-user custom RPC, backend falls back to default if it fails
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to assess pools');
+        }
+
+        const data = await response.json();
+
+        const assessedPools: PoolAssessment[] = data.assessments.map((p: any) => ({
+          pool: p.pool,
+          output: BigInt(p.output),
+          liquidity: BigInt(p.liquidity),
+          priceImpact: BigInt(p.price_impact_bps),
+          score: BigInt(p.score),
+          eligible: p.eligible,
+          failReason: BigInt(p.fail_reason_code),
+          // path/amountOutMin/factory are NOT present yet — only populated
+          // once the user clicks this pool, via selectPool() below.
+        }));
+
+        setPools(assessedPools);
+
+        // Auto-select the best eligible pool (highest score) to show "Receive" amount instantly
+        const eligiblePools = assessedPools.filter((p) => p.eligible);
+        if (eligiblePools.length > 0) {
+          const bestPool = [...eligiblePools].sort((a, b) => {
+            const scoreA = Number(a.score);
+            const scoreB = Number(b.score);
+            return scoreB - scoreA;
+          })[0];
+          selectPool(bestPool, tokenIn, tokenOut);
+        } else {
+          setSelectedPool(null);
+        }
+      } catch (e) {
+        setPools([]);
+        setSelectedPool(null);
+        setError(isRateLimitError(e) ? 'RPC rate limited. Retrying with alternate node...' : parseBackendError(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [settings.backendUrl, settings.rpcUrl, selectPool]
   );
 
   const resetPools = useCallback(() => {

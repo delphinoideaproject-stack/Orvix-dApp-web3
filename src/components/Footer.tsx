@@ -2,6 +2,10 @@ import React from 'react';
 import { Page } from '../types';
 
 export function Footer({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className="border-t border-zinc-200 dark:border-white/5 pt-12 pb-24 md:pb-12 w-full">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10">
@@ -66,6 +70,16 @@ export function Footer({ setCurrentPage }: { setCurrentPage: (p: Page) => void }
       {/* bottom line */}
       <div className="max-w-7xl mx-auto px-6 mt-16 pt-6 border-t border-zinc-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center md:items-start gap-4 text-xs font-medium text-zinc-500 dark:text-zinc-500">
         <span className="w-full text-left">© 2026 · Orvix Labs</span>
+        {/* right: back to top */}
+        <div 
+          onClick={scrollToTop}
+          title="Back to top"
+          className="flex items-center justify-center text-zinc-500 dark:text-gray-500 hover:text-zinc-900 dark:hover:text-gray-200 transition-all cursor-pointer p-1 hover:-translate-y-0.5"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </div>
       </div>
     </footer>
   );

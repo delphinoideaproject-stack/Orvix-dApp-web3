@@ -15,6 +15,7 @@ import { SwapPage } from './pages/SwapPage';
 import { SubmitWizard } from './pages/SubmitWizard';
 import { CreatorPortalPage } from './pages/CreatorPortalPage';
 import { StaticPage } from './pages/StaticPage';
+import { DocsPage, WhitepaperPage, ContactPage, PrivacyPage } from './pages/ContentPages';
 import { TokenDetailPage } from './pages/TokenDetailPage';
 import { SettingsModal } from './components/SettingsModal';
 import { ProfilePage } from './pages/ProfilePage';
@@ -194,6 +195,7 @@ export default function App() {
           <ProfilePage 
             setCurrentPage={handleNavigate}
             onSelectToken={setSelectedToken}
+            onTrade={handleQuickTrade}
           />
         );
       case 'ARCHIVE':
@@ -241,37 +243,20 @@ export default function App() {
         );
       case 'DOCS':
         return (
-          <StaticPage title="Documentation">
-            <p>Welcome to the Orvix Protocol documentation. Orvix is a deterministic discovery protocol for verified Web3 assets operating exclusively on AMM V2 BNB Chain.</p>
-            <h2>Overview</h2>
-            <p>We algorithmically identify, manually review, and present early-stage blockchain projects with guaranteed liquidity locking.</p>
-          </StaticPage>
+          <DocsPage />
         );
       case 'WHITEPAPER':
         return (
-          <StaticPage title="Whitepaper">
-            <p>The thesis behind Orvix Labs and our approach to token curation on BNB Chain.</p>
-            <h2>The Problem</h2>
-            <p>The current landscape of token discovery is filled with noise and unverified contracts.</p>
-            <h2>The Solution</h2>
-            <p>A deterministic approach to contract verification and AMM V2 liquidity locking analysis.</p>
-          </StaticPage>
+          <WhitepaperPage />
         );
       case 'CONTACT':
         return (
-          <StaticPage title="Contact Us">
-            <p>Reach out to the Orvix curation team.</p>
-            <p>Email: security@orvix.labs</p>
-            <p>Telegram: @orvix_support</p>
-          </StaticPage>
+          <ContactPage />
         );
+      case 'TERMS':
       case 'PRIVACY':
         return (
-          <StaticPage title="Privacy Policy">
-            <p>We respect your privacy. Orvix does not track personal wallet activity beyond submitted application data.</p>
-            <h2>Data Collection</h2>
-            <p>We only store information explicitly provided during the token submission process on BNB Chain.</p>
-          </StaticPage>
+          <PrivacyPage />
         );
       default:
         return <HomePage setCurrentPage={handleNavigate} searchQuery={searchQuery} onSelectToken={setSelectedToken} />;

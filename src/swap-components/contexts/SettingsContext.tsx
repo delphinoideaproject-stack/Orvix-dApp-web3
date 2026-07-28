@@ -25,6 +25,7 @@ const DEFAULT_SETTINGS: SwapSettings = {
   maxImpactBps: MAX_PRICE_IMPACT_BPS,
   treasury: ADDRESSES.TREASURY,
   integrator: ADDRESSES.INTEGRATOR,
+  slippageAuto: true,
 };
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {

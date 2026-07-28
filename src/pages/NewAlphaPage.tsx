@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, Token } from '../types';
 import { Button } from '../components/Button';
@@ -70,6 +70,54 @@ export function TokenListPage({
     setCurrentSlide(prev => (prev - 1 + SLIDER_DATA.length) % SLIDER_DATA.length);
   };
 
+  // Swipe / Drag controls for New Alpha hero slider
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      dragStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      isDragging.current = true;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isDragging.current || !dragStartPos.current) return;
+    isDragging.current = false;
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - dragStartPos.current.x;
+      const deltaY = e.changedTouches[0].clientY - dragStartPos.current.y;
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+        if (deltaX > 0) {
+          prevSlide();
+        } else {
+          nextSlide();
+        }
+      }
+    }
+    dragStartPos.current = null;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    isDragging.current = true;
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDragging.current || !dragStartPos.current) return;
+    isDragging.current = false;
+    const deltaX = e.clientX - dragStartPos.current.x;
+    const deltaY = e.clientY - dragStartPos.current.y;
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+      if (deltaX > 0) {
+        prevSlide();
+      } else {
+        nextSlide();
+      }
+    }
+    dragStartPos.current = null;
+  };
+
   // Data loading logic with useAlphaData hook
   const { tokens, loading, error, refetch } = useAlphaData(initialTokens);
 
@@ -125,7 +173,13 @@ export function TokenListPage({
   return (
     <div className="w-full">
       {/* Manual Slider with 3 pictures and Dot Indicators */}
-      <div className="w-full aspect-[21/9] sm:h-56 relative overflow-hidden mb-8 border border-zinc-200 dark:border-zinc-800 bg-zinc-950">
+      <div 
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        className="w-full aspect-[21/9] sm:h-56 relative overflow-hidden mb-8 border border-zinc-200 dark:border-zinc-800 bg-zinc-950 select-none cursor-grab active:cursor-grabbing"
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -138,7 +192,8 @@ export function TokenListPage({
             <img 
               src={SLIDER_DATA[currentSlide].image} 
               alt="" 
-              className="w-full h-full object-cover opacity-60"
+              draggable={false}
+              className="w-full h-full object-cover opacity-60 select-none pointer-events-none"
               referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 flex flex-col justify-end p-5 sm:p-6 text-white">
