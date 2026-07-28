@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-bg-primary: var(--color-bg-primary-val);
+  --color-bg-secondary: var(--color-bg-secondary-val);
+  --color-accent-navy: var(--color-accent-navy-val);
+  --color-accent-cyan: var(--color-accent-cyan-val);
+  --color-border: var(--color-border-val);
+  --color-border-hover: var(--color-border-hover-val);
+  --color-hover: var(--color-hover-val);
+  --color-success: var(--color-success-val);
+  --color-warning: var(--color-warning-val);
+  --color-error: var(--color-error-val);
+  --color-text-primary: var(--color-text-primary-val);
+  --color-text-secondary: var(--color-text-secondary-val);
+  --color-text-muted: var(--color-text-muted-val);
+  
+  --animate-shimmer: shimmer 1.6s infinite linear;
+  --animate-fade-in: fadeIn 200ms ease-out;
+  --animate-slide-up: slideUp 220ms ease-out;
+  --animate-scale-in: scaleIn 180ms ease-out;
+  --animate-float: float 6s ease-in-out infinite;
+
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root, .light {
+  /* swap-components variables (LIGHT MODE) */
+  --color-bg-primary-val: #ffffff;
+  --color-bg-secondary-val: #f8fafc;
+  --color-accent-navy-val: #e2e8f0;
+  --color-accent-cyan-val: #0284c7;
+  --color-border-val: rgba(0,0,0,0.1);
+  --color-border-hover-val: rgba(0,0,0,0.2);
+  --color-hover-val: rgba(0,0,0,0.05);
+  --color-success-val: #10b981;
+  --color-warning-val: #f59e0b;
+  --color-error-val: #ef4444;
+  --color-text-primary-val: #0f172a;
+  --color-text-secondary-val: rgba(15,23,42,0.72);
+  --color-text-muted-val: rgba(15,23,42,0.40);
+
+  /* Orvix dApp variables (LIGHT MODE) */
+  --bg: #ffffff;
+  --bg2: #f8fafc;
+  --card: rgba(255, 255, 255, 0.8);
+  --border: rgba(0, 0, 0, 0.1);
+  --border2: #555555;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --text-white: #000000;
+  --accent: #0284c7;
+}
+
+.dark {
+  /* swap-components variables (DARK MODE) */
+  --color-bg-primary-val: #000000;
+  --color-bg-secondary-val: #0a0a0a;
+  --color-accent-navy-val: #1e293b;
+  --color-accent-cyan-val: #06b6d4;
+  --color-border-val: rgba(255,255,255,0.06);
+  --color-border-hover-val: rgba(255,255,255,0.2);
+  --color-hover-val: rgba(255,255,255,0.05);
+  --color-success-val: #10b981;
+  --color-warning-val: #f59e0b;
+  --color-error-val: #ef4444;
+  --color-text-primary-val: #f1f5f9;
+  --color-text-secondary-val: rgba(241,245,249,0.72);
+  --color-text-muted-val: rgba(241,245,249,0.40);
+
+  /* Orvix dApp variables (DARK MODE) */
+  --bg: #000000;
+  --bg2: #0a0a0a;
+  --card: rgba(15, 20, 25, 0.6);
+  --border: rgba(255, 255, 255, 0.06);
+  --border2: #CCCCCC;
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --text-white: #ffffff;
+  --accent: #06b6d4;
+}
+
+html {
+  background-color: var(--color-bg-primary-val);
+  color: var(--color-text-primary-val);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--color-bg-primary-val);
+  color: var(--color-text-primary-val);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Numeric Typography Update */
+.tabular-nums,
+.font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none !important;
+}
+.price-value {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+.numeric-value {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none !important;
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Token Detail Refactor CSS Styles */
+.bare-icon {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary-val);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: all 0.25s ease;
+  position: relative;
+  text-decoration: none;
+}
+.bare-icon:hover {
+  color: var(--color-text-primary-val) !important;
+  filter: drop-shadow(0 0 10px rgba(92,206,255,0.5)) !important;
+  transform: scale(1.05);
+}
+
+.copy-popup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: var(--color-text-primary-val);
+  color: var(--color-bg-primary-val);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  z-index: 30;
+}
+.copy-popup.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.copy-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.neon-text {
+  color: #5cceff !important;
+  text-shadow: 0 0 10px rgba(92,206,255,0.8), 0 0 20px rgba(92,206,255,0.5), 0 0 40px rgba(92,206,255,0.3) !important;
+  transition: all 0.15s ease;
+}
+.neon-text-green {
+  color: #23d18b !important;
+  text-shadow: 0 0 10px rgba(35,209,139,0.8), 0 0 20px rgba(35,209,139,0.5), 0 0 40px rgba(35,209,139,0.3) !important;
+  transition: all 0.15s ease;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted-val);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-val);
+}
+.data-row:last-of-type {
+  border-bottom: none;
+}
+
+.data-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary-val);
+}
+.data-value {
+  font-weight: 600;
+  color: var(--color-text-primary-val);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
