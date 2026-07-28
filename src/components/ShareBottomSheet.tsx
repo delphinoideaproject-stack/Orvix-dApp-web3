@@ -23,6 +23,13 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
 
   if (!isOpen) return null;
 
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  const offset = -now.getTimezoneOffset();
+  const offsetHours = Math.floor(Math.abs(offset) / 60);
+  const tzString = `(GMT${offset >= 0 ? '+' : '-'}${offsetHours})`;
+  const formattedDateTime = `${dateStr} ${timeStr} ${tzString}`;
   const projectUrl = window.location.href;
   const isPositive = token.priceChange >= 0;
   const liquidityText = formatGlobalNumber(token.liquidityAdded || token.liquidityLockDuration || '100% Locked (Verified)');
@@ -88,33 +95,43 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // 2. Top Header: [Orvix Logo] Orvix Labs [timestamp]
+      const orvixLogoImg = new Image();
+      orvixLogoImg.crossOrigin = 'anonymous';
+      await new Promise((resolve) => {
+        orvixLogoImg.onload = () => {
+          ctx.drawImage(orvixLogoImg, 60, 45, 40, 40);
+          resolve(true);
+        };
+        orvixLogoImg.onerror = () => resolve(true);
+        orvixLogoImg.src = 'https://raw.githubusercontent.com/orvix-labs/Orvix-Icon/main/orvix.svg';
+      });
+
       ctx.save();
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px Inter, sans-serif';
+      ctx.font = 'bold 32px Inter, sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Orvix Labs', 100, 65);
+      ctx.fillText('Orvix Labs', 115, 65);
 
       // Timestamp top right
+      const dateTimeText = formattedDateTime;
       ctx.textAlign = 'right';
-      ctx.font = 'bold 20px monospace';
+      ctx.font = 'bold 24px monospace';
       ctx.fillStyle = '#d4d4d8';
-      ctx.fillText('2026-07-09 17:05 (UTC+8)', canvas.width - 60, 65);
+      ctx.fillText(dateTimeText, canvas.width - 60, 65);
       ctx.restore();
 
-      // 3. Middle Section: [Token Icon] QAI [sparkline], QAI/USDT · BNB Chain
+      // 3. Middle Section: [Token Icon] BTS/USST
       ctx.save();
-      // Draw token icon circle at x = 60, y = 160, r = 32
       ctx.beginPath();
-      ctx.arc(92, 170, 32, 0, Math.PI * 2);
+      ctx.arc(100, 180, 40, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
-
       const tokenImg = new Image();
       tokenImg.crossOrigin = 'anonymous';
       await new Promise((resolve) => {
         tokenImg.onload = () => {
-          ctx.drawImage(tokenImg, 60, 138, 64, 64);
+          ctx.drawImage(tokenImg, 60, 140, 80, 80);
           resolve(true);
         };
         tokenImg.onerror = () => resolve(true);
@@ -124,43 +141,63 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
 
       ctx.save();
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 38px Inter, sans-serif';
+      ctx.font = '900 64px Inter, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(token.symbol, 145, 158);
-
-      ctx.fillStyle = '#d4d4d8';
-      ctx.font = 'bold 18px Inter, sans-serif';
-      ctx.fillText(`${token.pair} · BNB Chain`, 145, 196);
-
-      // 4. Lower Section: PRICE, SINCE LISTED, QR Code
-      ctx.save();
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = 'bold 15px Inter, sans-serif';
-      ctx.fillText('PRICE', 60, 290);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 44px monospace';
-      ctx.fillText(`$${formatGlobalNumber(token.price)}`, 60, 345);
-
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = 'bold 15px Inter, sans-serif';
-      ctx.fillText('SINCE LISTED', 280, 290);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 34px Inter, sans-serif';
-      ctx.fillText(`${token.priceChange >= 0 ? '+' : ''}${formatGlobalNumber(token.priceChange)}%`, 280, 345);
+      ctx.textBaseline = 'middle';
+      const pairText = `${token.symbol}/${token.pair.split('/')[1] || 'USDT'}`;
+      ctx.fillText(pairText, 160, 185);
       ctx.restore();
 
-      // QR Code bottom right
+      // 4. Lower Section: PRICE, Percentage, Mini chart
+      ctx.save();
+      ctx.fillStyle = '#a1a1aa';
+      ctx.font = 'bold 20px Inter, sans-serif';
+      ctx.fillText('PRICE', 60, 310);
+
+      const priceStr = `$${formatGlobalNumber(token.price)}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 72px monospace';
+      ctx.fillText(priceStr, 60, 380);
+
+      const priceWidth = ctx.measureText(priceStr).width;
+      
+      const changeStr = `${token.priceChange >= 0 ? '+' : ''}${formatGlobalNumber(token.priceChange)}%`;
+      ctx.fillStyle = token.priceChange >= 0 ? '#34d399' : '#fb7185';
+      ctx.font = '900 52px Inter, sans-serif';
+      ctx.fillText(changeStr, 60 + priceWidth + 30, 380);
+      
+      const changeWidth = ctx.measureText(changeStr).width;
+      ctx.restore();
+
+      // Mini chart line
+      const chartX = 60 + priceWidth + 30 + changeWidth + 40;
+      const chartY = 330;
+      ctx.save();
+      ctx.strokeStyle = token.priceChange >= 0 ? '#34d399' : '#fb7185';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      if (token.priceChange >= 0) {
+        ctx.moveTo(chartX, chartY + 50);
+        ctx.bezierCurveTo(chartX + 40, chartY + 40, chartX + 80, chartY + 60, chartX + 120, chartY + 20);
+        ctx.bezierCurveTo(chartX + 160, chartY + 30, chartX + 180, chartY - 10, chartX + 200, chartY + 10);
+      } else {
+        ctx.moveTo(chartX, chartY + 10);
+        ctx.bezierCurveTo(chartX + 40, chartY + 20, chartX + 80, chartY - 10, chartX + 120, chartY + 40);
+        ctx.bezierCurveTo(chartX + 160, chartY + 30, chartX + 180, chartY + 60, chartX + 200, chartY + 50);
+      }
+      ctx.shadowColor = token.priceChange >= 0 ? 'rgba(52,211,153,0.5)' : 'rgba(251,113,133,0.5)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 4;
+      ctx.stroke();
+      ctx.restore();
+
+      // 5. QR Code Bottom Right
       const qrSize = 130;
       const qrX = canvas.width - 60 - qrSize;
-      const qrY = 250;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(qrX, qrY, qrSize, qrSize, 14);
-      ctx.fill();
-
+      const qrY = 460;
+      
       const svgElement = document.getElementById(`share-qr-svg-${token.id}`);
       if (svgElement) {
         const svgString = new XMLSerializer().serializeToString(svgElement);
@@ -170,7 +207,7 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
         await new Promise((resolve) => {
           const qrImg = new Image();
           qrImg.onload = () => {
-            ctx.drawImage(qrImg, qrX + 10, qrY + 10, qrSize - 20, qrSize - 20);
+            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
             URL.revokeObjectURL(blobURL);
             resolve(true);
           };
@@ -181,21 +218,6 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
           qrImg.src = blobURL;
         });
       }
-
-      // 5. Footer Line: LP: 100% Locked · AMM V2 · orvix.io
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(60, 420);
-      ctx.lineTo(canvas.width - 60, 420);
-      ctx.stroke();
-
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = 'bold 16px Inter, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('LP: 100% Locked · AMM V2 · orvix.io', 60, 470);
-      ctx.restore();
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -235,19 +257,13 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
         <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mt-3 mb-1 sm:hidden cursor-pointer" onClick={onClose} />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-950/60">
-          <div className="flex items-center gap-3">
-            <span className="text-zinc-500 font-mono text-sm">▬</span>
-            <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
-              Share Token · {token.symbol}
-            </h2>
-          </div>
+        <div className="flex justify-end pt-4 px-4 pb-0">
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer z-10"
             title="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -255,7 +271,7 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
         <div className="p-6 space-y-5 overflow-y-auto">
           
           {/* Live Preview Card */}
-          <div className="relative w-full aspect-[600/315] rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950 flex flex-col justify-between p-4 sm:p-5 font-sans font-bold text-white">
+          <div className="relative w-full aspect-[600/315] rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-950 flex flex-col justify-between p-6 font-sans font-bold text-white">
             {/* Token Wallpaper */}
             <img
               src={token.wallpaper || 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=600&auto=format&fit=crop&q=80'}
@@ -265,70 +281,73 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
             />
             {/* Overlay rgba(0,0,0,0.75) */}
             <div className="absolute inset-0 bg-black/75" />
-
+            
             {/* Top Row: [Orvix Logo] Orvix Labs [timestamp] */}
             <div className="relative z-10 flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center gap-2">
-                <OrvixLogo className="w-5 h-5 text-white" />
-                <span className="font-bold text-white tracking-wide">Orvix Labs</span>
+                <OrvixLogo className="w-6 h-6 text-white" />
+                <span className="font-bold text-white tracking-wide text-sm sm:text-lg">Orvix Labs</span>
               </div>
-              <div className="text-[10px] sm:text-xs font-mono text-zinc-300 font-bold">
-                2026-07-09 17:05 (UTC+8)
-              </div>
-            </div>
-
-            {/* Middle Row: [Token Icon] QAI [sparkline], QAI/USDT · BNB Chain */}
-            <div className="relative z-10 flex items-start justify-between my-2">
-              <div className="flex items-center gap-3">
-                <img 
-                  src={token.logo || 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png'} 
-                  alt={token.symbol}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border border-white/20"
-                  referrerPolicy="no-referrer"
-                />
-                <div>
-                  <div className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2">
-                    {token.symbol}
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-zinc-300 font-semibold">
-                    {token.pair} · BNB Chain
-                  </div>
-                </div>
+              <div className="text-[10px] sm:text-sm font-mono text-zinc-300 font-bold">
+                {formattedDateTime}
               </div>
             </div>
 
-            {/* Lower Row: PRICE, SINCE LISTED, [QR] */}
-            <div className="relative z-10 flex items-end justify-between my-1">
-              <div className="flex items-end gap-6 sm:gap-8">
-                <div>
-                  <div className="text-[9px] sm:text-[10px] uppercase font-bold text-zinc-400 tracking-wider">PRICE</div>
-                  <div className="text-base sm:text-xl font-black font-mono text-white">${formatGlobalNumber(token.price)}</div>
-                </div>
-                <div>
-                  <div className="text-[9px] sm:text-[10px] uppercase font-bold text-zinc-400 tracking-wider">SINCE LISTED</div>
-                  <div className={`text-sm sm:text-base font-black ${token.priceChange >= 0 ? 'text-white' : 'text-zinc-300'}`}>
-                    {token.priceChange >= 0 ? '+' : ''}{formatGlobalNumber(token.priceChange)}%
+            {/* Middle Row: [Token Icon] BTS/USST */}
+            <div className="relative z-10 flex items-center gap-4 mt-6">
+              <img 
+                src={token.logo || 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png'} 
+                alt={token.symbol}
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
+                referrerPolicy="no-referrer"
+              />
+              <div className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                {token.symbol}/{token.pair.split('/')[1] || 'USDT'}
+              </div>
+            </div>
+
+            {/* Lower Row: PRICE, Percentage, Mini chart & QR Code */}
+            <div className="relative z-10 mt-auto pt-4 flex items-end justify-between">
+              <div>
+                <div className="text-[10px] sm:text-xs uppercase font-bold text-zinc-400 tracking-widest mb-1">PRICE</div>
+                <div className="flex items-end gap-4">
+                  <div className="text-3xl sm:text-5xl font-black font-mono text-white leading-none">
+                    ${formatGlobalNumber(token.price)}
+                  </div>
+                  <div className={`text-xl sm:text-3xl font-black leading-none mb-1 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {isPositive ? '+' : ''}{formatGlobalNumber(token.priceChange)}%
+                  </div>
+                  {/* Mini chart line */}
+                  <div className="ml-2 w-20 h-6 sm:w-28 sm:h-10 mb-1 flex items-center">
+                    <svg width="100%" height="100%" viewBox="0 0 100 30" preserveAspectRatio="none">
+                      <path 
+                        d={isPositive ? "M0,25 C20,20 40,30 60,10 S80,15 100,5" : "M0,5 C20,10 40,0 60,20 S80,15 100,25"}
+                        fill="none" 
+                        stroke={isPositive ? "#34d399" : "#fb7185"} 
+                        strokeWidth="4" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        style={{ filter: `drop-shadow(0px 4px 6px ${isPositive ? 'rgba(52,211,153,0.3)' : 'rgba(251,113,133,0.3)'})` }}
+                      />
+                    </svg>
                   </div>
                 </div>
               </div>
 
-              {/* QR Code Bottom Right */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white p-1 rounded-xl shadow-lg flex items-center justify-center shrink-0">
+              {/* Footer QR without box container */}
+              <div className="flex items-center">
                 <QRCodeSVG
                   value={`https://orvix.io/token/${token.contract}`}
-                  size={56}
+                  size={70}
                   level="M"
                   includeMargin={false}
+                  bgColor="transparent"
+                  fgColor="#ffffff"
                 />
               </div>
             </div>
-
-            {/* Footer Line: LP: 100% Locked · AMM V2 · orvix.io */}
-            <div className="relative z-10 text-[10px] sm:text-xs text-zinc-400 font-bold border-t border-white/10 pt-2 flex items-center justify-between">
-              <span>LP: 100% Locked · AMM V2 · orvix.io</span>
-            </div>
           </div>
-
+          
           {/* Three iOS-style Circle Icon Buttons */}
           <div className="flex items-center justify-center gap-8 py-2">
             {/* Copy Link */}
@@ -343,7 +362,6 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
                 {copySuccess ? 'Copied!' : 'Copy Link'}
               </span>
             </button>
-
             {/* Download */}
             <button
               onClick={handleDownloadCard}
@@ -363,7 +381,6 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
                 {isGenerating ? 'Saving...' : downloadSuccess ? 'Saved!' : 'Download'}
               </span>
             </button>
-
             {/* Share (Native) */}
             <button
               onClick={async () => {
@@ -371,7 +388,7 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
                   try {
                     await navigator.share({
                       title: `${token.name} (${token.symbol}) on Orvix`,
-                      text: `Check out ${token.name} ($${token.symbol}) on Orvix Labs! Price: $${formatGlobalNumber(token.price)}`,
+                      text: `Check out ${token.name} (${token.symbol}) on Orvix Labs! Price: ${formatGlobalNumber(token.price)}`,
                       url: projectUrl,
                     });
                   } catch (e) {
@@ -391,7 +408,6 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
               </span>
             </button>
           </div>
-
           <div className="text-center text-[11px] text-zinc-500 font-medium pb-1">
             Shareable on X · Telegram · Discord
           </div>
@@ -405,6 +421,8 @@ export function ShareBottomSheet({ token, isOpen, onClose }: ShareBottomSheetPro
             size={400}
             level="M"
             includeMargin={false}
+            bgColor="transparent"
+            fgColor="#ffffff"
           />
         </div>
       </div>

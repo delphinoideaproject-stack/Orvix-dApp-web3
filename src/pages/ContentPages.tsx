@@ -27,12 +27,7 @@ export function DocsPage() {
           To interact with the platform, connect your Web3 wallet (MetaMask, Trust Wallet, etc.) supporting the BNB Chain. Ensure you are connected to either the BSC Mainnet (ChainID 56) or BSC Testnet (ChainID 97) as required.
         </p>
 
-        <div className="bg-zinc-100 dark:bg-zinc-900 p-4 rounded-xl mt-6">
-          <h3 className="font-bold mb-2 text-zinc-800 dark:text-zinc-200">Developer API</h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Our REST and GraphQL APIs are currently in closed beta. For integration inquiries, please reach out via our contact channels.
-          </p>
-        </div>
+
       </div>
     </StaticPage>
   );
@@ -106,11 +101,7 @@ export function ContactPage() {
             <a href="https://t.me/orvix_support" target="_blank" rel="noreferrer" className="text-cyan-600 dark:text-cyan-400 font-mono text-sm hover:underline">@orvix_support</a>
           </div>
           
-          <div className="p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#050b14]">
-            <h3 className="font-bold text-lg mb-2 text-zinc-900 dark:text-zinc-100">Business & Partnerships</h3>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-4">For institutional investors and project collaborations.</p>
-            <a href="mailto:partners@orvix.labs" className="text-cyan-600 dark:text-cyan-400 font-mono text-sm hover:underline">partners@orvix.labs</a>
-          </div>
+
         </div>
       </div>
     </StaticPage>

@@ -19,7 +19,8 @@ import {
   ChevronUp,
   Info,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { SwapPage } from './SwapPage';
@@ -71,6 +72,7 @@ export function TokenDetailPage({
   onSwap: () => void;
 }) {
   const [isTradeOpen, setIsTradeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'market' | 'onchain' | 'audit'>('market');
   const [isChartOpen, setIsChartOpen] = useState(true);
   const [loadingOnChain, setLoadingOnChain] = useState(true);
   const [livePrice, setLivePrice] = useState(token.price);
@@ -640,194 +642,290 @@ export function TokenDetailPage({
           )}
         </AnimatePresence>
 
-        {/* MARKET DATA SECTION */}
-        <div>
-          <div className="section-label text-xs font-bold text-zinc-500 dark:text-white/40 uppercase tracking-widest mt-6 mb-2">
-            Market Data
-          </div>
-          
-          <div className="flex items-center gap-4 mt-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-white/40 font-bold">Network</span>
-              <span className="text-xs font-semibold text-zinc-900 dark:text-white/90">BNB Smart Chain</span>
-            </div>
-            <div className="w-px h-6 bg-zinc-200 dark:bg-white/10" />
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-white/40 font-bold">Pool</span>
-              <span className="text-xs font-semibold text-zinc-900 dark:text-white/90">{token.ammVersion || 'AMM V2'}</span>
-            </div>
+        {/* DETAILS TABS */}
+        <div className="mt-8">
+          <div className="flex justify-center items-center gap-6 border-b border-zinc-200 dark:border-white/10 mb-4">
+            <button
+              onClick={() => setActiveTab('market')}
+              className={cn(
+                "pb-3 text-xs font-bold uppercase tracking-widest transition-colors relative cursor-pointer",
+                activeTab === 'market' ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              )}
+            >
+              Market Data
+              {activeTab === 'market' && (
+                <span className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-zinc-900 dark:bg-white rounded-t-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('onchain')}
+              className={cn(
+                "pb-3 text-xs font-bold uppercase tracking-widest transition-colors relative cursor-pointer",
+                activeTab === 'onchain' ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              )}
+            >
+              On-Chain
+              {activeTab === 'onchain' && (
+                <span className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-zinc-900 dark:bg-white rounded-t-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={cn(
+                "pb-3 text-xs font-bold uppercase tracking-widest transition-colors relative cursor-pointer",
+                activeTab === 'audit' ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              )}
+            >
+              Audit
+              {activeTab === 'audit' && (
+                <span className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-zinc-900 dark:bg-white rounded-t-full" />
+              )}
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-3">
-            <div className="flex flex-col gap-1 py-2 border-b border-zinc-200 dark:border-white/5">
-              <span className="text-[11px] font-bold text-zinc-500 dark:text-white/50">Price</span>
-              <span className="text-[15px] font-bold text-zinc-900 dark:text-white">{livePrice}</span>
-            </div>
-            <div className="flex flex-col gap-1 py-2 border-b border-zinc-200 dark:border-white/5">
-              <span className="text-[11px] font-bold text-zinc-500 dark:text-white/50">Liquidity</span>
-              <span className="text-[15px] font-bold text-zinc-900 dark:text-white">{liveLiquidity}</span>
-            </div>
-            <div className="flex flex-col gap-1 py-2">
-              <span className="text-[11px] font-bold text-zinc-500 dark:text-white/50">Market Cap</span>
-              <span className="text-[15px] font-bold text-zinc-900 dark:text-white">{liveMcap}</span>
-            </div>
-            <div className="flex flex-col gap-1 py-2">
-              <span className="text-[11px] font-bold text-zinc-500 dark:text-white/50">FDV</span>
-              <span className="text-[15px] font-bold text-zinc-900 dark:text-white">{liveFdv}</span>
-            </div>
-          </div>
-        </div>
+          <AnimatePresence mode="wait">
+            {activeTab === 'market' && (
+              <motion.div
+                key="market"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-0.5"
+              >
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Network</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">BNB Smart Chain</span>
+                </div>
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Pool</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">{token.ammVersion || 'Pancake V2'}</span>
+                </div>
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Liquidity</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">{liveLiquidity}</span>
+                </div>
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Market Cap</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">{liveMcap}</span>
+                </div>
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">FDV</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">{liveFdv}</span>
+                </div>
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Max Supply</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">{token.totalSupply || '1,000,000,000'}</span>
+                </div>
+                <div className="data-row flex items-center justify-between py-3">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Circulating Supply</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">{token.totalSupply || '1,000,000,000'}</span>
+                </div>
+              </motion.div>
+            )}
 
-        {/* ON-CHAIN ANALYSIS SECTION */}
-        <div>
-          <div className="section-label text-xs font-bold text-zinc-500 dark:text-white/40 uppercase tracking-widest mt-6 mb-2">
-            On-Chain Analysis
-          </div>
-          
-          <div className="space-y-0.5">
-            {/* Contract */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Contract Address</span>
-              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
-                <a 
-                  href={`${getExplorerUrl()}/address/${token.contract}`} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
-                >
-                  <span>{token.contract.slice(0, 6)}....{token.contract.slice(-4)}</span>
-                  <ExternalLink className="w-3 h-3 opacity-60" />
-                </a>
-                <CopyButtonWithPopup text={token.contract} />
-              </div>
-            </div>
-
-            {/* Creator */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Creator</span>
-              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
-                {token.creator ? (
-                  <>
+            {activeTab === 'onchain' && (
+              <motion.div
+                key="onchain"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-0.5"
+              >
+                {/* Base Pair */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Base Pair</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
+                    {liveBasePair}
+                  </span>
+                </div>
+                
+                {/* Contract */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Contract Address</span>
+                  <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
                     <a 
-                      href={`${getExplorerUrl()}/address/${token.creator}`} 
+                      href={`${getExplorerUrl()}/address/${token.contract}`} 
                       target="_blank" 
                       rel="noreferrer"
                       className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
                     >
-                      <span>{token.creator.slice(0, 6)}....{token.creator.slice(-4)}</span>
+                      <span>{token.contract.slice(0, 6)}....{token.contract.slice(-4)}</span>
                       <ExternalLink className="w-3 h-3 opacity-60" />
                     </a>
-                    <CopyButtonWithPopup text={token.creator} />
-                  </>
-                ) : (
-                  <span className="text-zinc-400 dark:text-white/40">Unknown</span>
-                )}
-              </div>
-            </div>
+                    <CopyButtonWithPopup text={token.contract} />
+                  </div>
+                </div>
 
-            {/* Base Pair */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Base Pair</span>
-              <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
-                {liveBasePair}
-              </span>
-            </div>
+                {/* Creator */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Creator Address</span>
+                  <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
+                    {token.creator ? (
+                      <>
+                        <a 
+                          href={`${getExplorerUrl()}/address/${token.creator}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
+                        >
+                          <span>{token.creator.slice(0, 6)}....{token.creator.slice(-4)}</span>
+                          <ExternalLink className="w-3 h-3 opacity-60" />
+                        </a>
+                        <CopyButtonWithPopup text={token.creator} />
+                      </>
+                    ) : (
+                      <span className="text-zinc-400 dark:text-white/40">Unknown</span>
+                    )}
+                  </div>
+                </div>
 
-            {/* Buy / Sell Tax */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Buy / Sell Tax</span>
-              <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
-                0% / 0%
-              </span>
-            </div>
+                {/* Add Liquidity */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Add Liquidity Tx</span>
+                  <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
+                    {token.addLpTx && token.addLpTx !== '0x...' && token.addLpTx !== '' ? (
+                      <>
+                        <a 
+                          href={`${getExplorerUrl()}/tx/${token.addLpTx}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
+                        >
+                          <span>{token.addLpTx.slice(0, 6)}....{token.addLpTx.slice(-4)}</span>
+                          <ExternalLink className="w-3 h-3 opacity-60" />
+                        </a>
+                        <CopyButtonWithPopup text={token.addLpTx} />
+                      </>
+                    ) : (
+                      <span className="text-zinc-400 dark:text-white/40">N/A</span>
+                    )}
+                  </div>
+                </div>
 
-            {/* Mint / Burn */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Mint / Burn</span>
-              <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
-                None / Yes
-              </span>
-            </div>
+                {/* LP Lock */}
+                <div className="data-row flex items-center justify-between py-3">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">LP Lock Tx</span>
+                  <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
+                    {token.lockLpTx && token.lockLpTx !== '0x...' && token.lockLpTx !== '' ? (
+                      <>
+                        <a 
+                          href={`${getExplorerUrl()}/tx/${token.lockLpTx}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
+                        >
+                          <span>{token.lockLpTx.slice(0, 6)}....{token.lockLpTx.slice(-4)}</span>
+                          <ExternalLink className="w-3 h-3 opacity-60" />
+                        </a>
+                        <CopyButtonWithPopup text={token.lockLpTx} />
+                      </>
+                    ) : (
+                      <span className="text-zinc-400 dark:text-white/40">N/A</span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-            {/* Renounced */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Renounced Ownership</span>
-              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
-                {token.renounceTx && token.renounceTx !== '0x...' && token.renounceTx !== '' ? (
-                  <>
+            {activeTab === 'audit' && (
+              <motion.div
+                key="audit"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-0.5"
+              >
+                {/* Contract Verified */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Contract Verified</span>
+                  <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/20">
                       Yes <Check className="w-3 h-3" />
                     </span>
-                    <a 
-                      href={`${getExplorerUrl()}/tx/${token.renounceTx}`} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="hover:underline flex items-center gap-1 text-xs text-zinc-500 dark:text-white/50"
-                    >
-                      <span>{token.renounceTx.slice(0, 6)}....{token.renounceTx.slice(-4)}</span>
-                      <ExternalLink className="w-3 h-3 opacity-60" />
-                    </a>
-                    <CopyButtonWithPopup text={token.renounceTx} />
-                  </>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/20">
-                    No
-                  </span>
-                )}
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* Add Liquidity */}
-            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Add Liquidity Tx</span>
-              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
-                {token.addLpTx && token.addLpTx !== '0x...' && token.addLpTx !== '' ? (
-                  <>
-                    <a 
-                      href={`${getExplorerUrl()}/tx/${token.addLpTx}`} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
-                    >
-                      <span>{token.addLpTx.slice(0, 6)}....{token.addLpTx.slice(-4)}</span>
-                      <ExternalLink className="w-3 h-3 opacity-60" />
-                    </a>
-                    <CopyButtonWithPopup text={token.addLpTx} />
-                  </>
-                ) : (
-                  <span className="text-zinc-400 dark:text-white/40">N/A</span>
-                )}
-              </div>
-            </div>
+                {/* Renounced Ownership */}
+                <div className="data-row flex flex-col py-3 border-b border-zinc-200 dark:border-white/5">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Renounced Ownership</span>
+                    <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
+                      {token.renounceTx && token.renounceTx !== '0x...' && token.renounceTx !== '' ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/20">
+                            Yes <Check className="w-3 h-3" />
+                          </span>
+                          <a 
+                            href={`${getExplorerUrl()}/tx/${token.renounceTx}`} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="hover:underline flex items-center gap-1 text-xs text-zinc-500 dark:text-white/50"
+                          >
+                            <span>{token.renounceTx.slice(0, 6)}....{token.renounceTx.slice(-4)}</span>
+                            <ExternalLink className="w-3 h-3 opacity-60" />
+                          </a>
+                          <CopyButtonWithPopup text={token.renounceTx} />
+                        </>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/20">
+                          No
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {(!token.renounceTx || token.renounceTx === '0x...' || token.renounceTx === '') && (
+                    <div className="mt-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/20 p-2.5 rounded-lg border border-amber-500/20 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span className="font-medium">Warning: Contract owner has not renounced ownership and may still have administrative privileges over this token.</span>
+                    </div>
+                  )}
+                </div>
 
-            {/* LP Locked */}
-            <div className="data-row flex items-center justify-between py-3">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">LP Locked</span>
-              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
-                {token.lockLpTx && token.lockLpTx !== '0x...' && token.lockLpTx !== '' ? (
-                  <>
-                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/20">
-                      Locked <Lock className="w-3 h-3" />
-                    </span>
-                    <a 
-                      href={`${getExplorerUrl()}/tx/${token.lockLpTx}`} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="hover:underline flex items-center gap-1 text-xs text-zinc-500 dark:text-white/50"
-                    >
-                      <span>{token.lockLpTx.slice(0, 6)}....{token.lockLpTx.slice(-4)}</span>
-                      <ExternalLink className="w-3 h-3 opacity-60" />
-                    </a>
-                    <CopyButtonWithPopup text={token.lockLpTx} />
-                  </>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/20">
-                    Unlocked
+                {/* Admin Control */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Admin Control / Owner Privileges</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
+                    {token.renounceTx && token.renounceTx !== '0x...' && token.renounceTx !== '' ? 'None' : 'Active'}
                   </span>
-                )}
-              </div>
-            </div>
-          </div>
+                </div>
+
+                {/* Mint / Burn */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Mint / Burn</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
+                    None / Yes
+                  </span>
+                </div>
+
+                {/* Buy / Sell Tax */}
+                <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Buy / Sell Tax</span>
+                  <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
+                    0% / 0%
+                  </span>
+                </div>
+
+                {/* LP Locked Status */}
+                <div className="data-row flex items-center justify-between py-3">
+                  <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">LP Locked Status</span>
+                  <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
+                    {token.lockLpTx && token.lockLpTx !== '0x...' && token.lockLpTx !== '' ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/20">
+                        Locked <Lock className="w-3 h-3" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/20">
+                        Unlocked
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
       </div>

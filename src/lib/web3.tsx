@@ -344,7 +344,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        setWalletError(`Dompet ${walletId.toUpperCase()} tidak terdeteksi di browser ini. Jika di smartphone, buka dApp ini dari menu Browser di dalam aplikasi MetaMask/Trust Wallet.`);
+        setWalletError(`${walletId.toUpperCase()} wallet not detected in this browser. If on mobile, please open this dApp from the Browser menu inside your MetaMask/Trust Wallet app.`);
         return;
       }
       
@@ -356,17 +356,17 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       // Request personal signature signature to confirm ownership
       const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'UTC' });
       const signMessageText = 
-        `Selamat datang di Orvix!\n\n` +
-        `Silakan tanda tangani pesan ini untuk mengonfirmasi kepemilikan dompet Anda.\n\n` +
-        `Tindakan ini sepenuhnya gratis dan tidak menggunakan biaya gas.\n\n` +
-        `Alamat Dompet:\n${userAddress}\n\n` +
-        `Waktu (UTC):\n${timestamp}`;
+        `Welcome to Orvix!\n\n` +
+        `Please sign this message to confirm ownership of your wallet.\n\n` +
+        `This action is completely free and costs no gas.\n\n` +
+        `Wallet Address:\n${userAddress}\n\n` +
+        `Time (UTC):\n${timestamp}`;
       
       try {
         await signer.signMessage(signMessageText);
       } catch (signErr: any) {
         console.warn("Wallet signature rejected:", signErr);
-        throw new Error("Persetujuan tanda tangan ditolak. Koneksi dompet dibatalkan.");
+        throw new Error("Signature request denied. Wallet connection cancelled.");
       }
 
       setProvider(browserProvider);
@@ -377,7 +377,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       setIsModalOpen(false);
     } catch (err: any) {
       console.warn('Failed to connect wallet:', err);
-      setWalletError(err?.message || 'Gagal terhubung ke dompet.');
+      setWalletError(err?.message || 'Failed to connect to wallet.');
     }
   };
 
