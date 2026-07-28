@@ -608,24 +608,41 @@ export function TokenDetailPage({
           <div className="space-y-0.5">
             {/* Contract */}
             <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Contract</span>
+              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Contract Address</span>
               <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
-                <span>{token.contract.slice(0, 6)}....{token.contract.slice(-4)}</span>
+                <a 
+                  href={`${getExplorerUrl()}/address/${token.contract}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
+                >
+                  <span>{token.contract.slice(0, 6)}....{token.contract.slice(-4)}</span>
+                  <ExternalLink className="w-3 h-3 opacity-60" />
+                </a>
                 <CopyButtonWithPopup text={token.contract} />
               </div>
             </div>
 
-            {/* Pair Address */}
+            {/* Creator */}
             <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Pair Address</span>
+              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Creator</span>
               <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
-                <span>
-                  {token.addLpTx && token.addLpTx.length === 42 
-                    ? `${token.addLpTx.slice(0, 6)}....${token.addLpTx.slice(-4)}`
-                    : '0xBCf4....3b95'
-                  }
-                </span>
-                <CopyButtonWithPopup text={token.addLpTx || '0xBCf4FBE06fe75c4B95F393918Ed53dD9A18d3b95'} />
+                {token.creator ? (
+                  <>
+                    <a 
+                      href={`${getExplorerUrl()}/address/${token.creator}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
+                    >
+                      <span>{token.creator.slice(0, 6)}....{token.creator.slice(-4)}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                    <CopyButtonWithPopup text={token.creator} />
+                  </>
+                ) : (
+                  <span className="text-zinc-400 dark:text-white/40">Unknown</span>
+                )}
               </div>
             </div>
 
@@ -637,7 +654,7 @@ export function TokenDetailPage({
               </span>
             </div>
 
-            {/* Tax */}
+            {/* Buy / Sell Tax */}
             <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
               <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Buy / Sell Tax</span>
               <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
@@ -645,20 +662,61 @@ export function TokenDetailPage({
               </span>
             </div>
 
+            {/* Mint / Burn */}
+            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Mint / Burn</span>
+              <span className="data-value text-sm text-zinc-900 dark:text-white font-semibold">
+                None / Yes
+              </span>
+            </div>
+
             {/* Renounced */}
             <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
-              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Renounced</span>
+              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Renounced Ownership</span>
               <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
-                <span className="flex items-center gap-1 text-zinc-900 dark:text-white font-semibold text-sm">
-                  Yes <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                </span>
-                {token.renounceTx && (
+                {token.renounceTx && token.renounceTx !== '0x...' && token.renounceTx !== '' ? (
                   <>
-                    <span className="text-xs text-zinc-500 dark:text-white/60">
-                      {token.renounceTx.slice(0, 6)}....{token.renounceTx.slice(-4)}
+                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Yes <Check className="w-3 h-3" />
                     </span>
+                    <a 
+                      href={`${getExplorerUrl()}/tx/${token.renounceTx}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="hover:underline flex items-center gap-1 text-xs text-zinc-500 dark:text-white/50"
+                    >
+                      <span>{token.renounceTx.slice(0, 6)}....{token.renounceTx.slice(-4)}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
                     <CopyButtonWithPopup text={token.renounceTx} />
                   </>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/20">
+                    No
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Add Liquidity */}
+            <div className="data-row flex items-center justify-between py-3 border-b border-zinc-200 dark:border-white/5">
+              <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">Add Liquidity Tx</span>
+              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
+                {token.addLpTx && token.addLpTx !== '0x...' && token.addLpTx !== '' ? (
+                  <>
+                    <a 
+                      href={`${getExplorerUrl()}/tx/${token.addLpTx}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="hover:underline flex items-center gap-1 text-zinc-800 dark:text-zinc-200"
+                    >
+                      <span>{token.addLpTx.slice(0, 6)}....{token.addLpTx.slice(-4)}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                    <CopyButtonWithPopup text={token.addLpTx} />
+                  </>
+                ) : (
+                  <span className="text-zinc-400 dark:text-white/40">N/A</span>
                 )}
               </div>
             </div>
@@ -666,10 +724,28 @@ export function TokenDetailPage({
             {/* LP Locked */}
             <div className="data-row flex items-center justify-between py-3">
               <span className="data-label text-xs font-semibold text-zinc-600 dark:text-white/70">LP Locked</span>
-              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-zinc-900 dark:text-white font-semibold text-sm">
-                  Locked <Lock className="w-3.5 h-3.5" />
-                </span>
+              <div className="data-value text-sm text-zinc-900 dark:text-white font-semibold flex items-center gap-2">
+                {token.lockLpTx && token.lockLpTx !== '0x...' && token.lockLpTx !== '' ? (
+                  <>
+                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Locked <Lock className="w-3 h-3" />
+                    </span>
+                    <a 
+                      href={`${getExplorerUrl()}/tx/${token.lockLpTx}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="hover:underline flex items-center gap-1 text-xs text-zinc-500 dark:text-white/50"
+                    >
+                      <span>{token.lockLpTx.slice(0, 6)}....{token.lockLpTx.slice(-4)}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                    <CopyButtonWithPopup text={token.lockLpTx} />
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/20">
+                    Unlocked
+                  </span>
+                )}
               </div>
             </div>
           </div>

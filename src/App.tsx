@@ -219,6 +219,7 @@ export default function App() {
           <SwapPage 
             onModalOpenChange={setIsSwapModalOpen} 
             preselectedToken={quickTradeToken}
+            onClearPreselectedToken={() => setQuickTradeToken(null)}
           />
         );
       case 'CREATOR_PORTAL':

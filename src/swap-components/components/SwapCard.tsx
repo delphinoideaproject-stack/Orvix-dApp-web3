@@ -11,6 +11,7 @@ import { VERIFIED_TOKENS, ADDRESSES } from '../constants/contracts';
 import TokenModal from './TokenModal';
 import QuoteDetails from './QuoteDetails';
 import TransactionDetails from './TransactionDetails';
+import type { Token } from '../../types';
 
 const BNB_TOKEN = VERIFIED_TOKENS[0];
 const WBNB_TOKEN = VERIFIED_TOKENS[1];
@@ -29,7 +30,13 @@ function inputFontSize(value: string): string {
   return 'text-base';
 }
 
-export default function SwapCard() {
+export default function SwapCard({
+  preselectedToken,
+  onClearPreselectedToken
+}: {
+  preselectedToken?: Token | null;
+  onClearPreselectedToken?: () => void;
+} = {}) {
   const { address, connected, provider, connect } = useWallet();
   const { settings, updateSettings } = useSettings();
   const { toast } = useToast();
@@ -43,6 +50,29 @@ export default function SwapCard() {
   const [balanceOut, setBalanceOut] = useState<string | null>(null);
   const [allowance, setAllowance] = useState<bigint>(0n);
   const [showSlippage, setShowSlippage] = useState(false);
+
+  // Set preselected token on mount/change
+  useEffect(() => {
+    if (preselectedToken) {
+      const match = VERIFIED_TOKENS.find(
+        (t) => t.address.toLowerCase() === preselectedToken.contract.toLowerCase()
+      );
+      if (match) {
+        setTokenOut(match);
+      } else {
+        const customToken: TokenInfo = {
+          address: preselectedToken.contract,
+          symbol: preselectedToken.symbol,
+          name: preselectedToken.name,
+          decimals: 18, // standard ERC20 default
+          logoURI: preselectedToken.logo,
+          verified: true,
+        };
+        setTokenOut(customToken);
+      }
+      onClearPreselectedToken?.();
+    }
+  }, [preselectedToken, onClearPreselectedToken]);
 
   const [customSlippageInput, setCustomSlippageInput] = useState(() => {
     const isPreset = [10, 50, 100].includes(settings.slippageBps);

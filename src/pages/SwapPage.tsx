@@ -29,7 +29,10 @@ export function SwapPage({
         <WalletProvider>
           <ToastProvider>
             <div className={`w-full max-w-md mx-auto ${embedded ? 'py-4' : 'py-8'}`}>
-              <SwapCard />
+              <SwapCard 
+                preselectedToken={preselectedToken}
+                onClearPreselectedToken={onClearPreselectedToken}
+              />
             </div>
           </ToastProvider>
         </WalletProvider>
