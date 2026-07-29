@@ -31,9 +31,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="w-16 h-16 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
               !
             </div>
-            <h1 className="text-xl font-bold mb-2">Terjadi Kesalahan di Aplikasi</h1>
+            <h1 className="text-xl font-bold mb-2">Application Error Occurred</h1>
             <p className="text-slate-400 text-sm mb-6">
-              {this.state.error?.message || 'Aplikasi mengalami kendala saat dimuat.'}
+              {this.state.error?.message || 'The application encountered an issue while loading.'}
             </p>
             <button
               onClick={() => {
@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
               }}
               className="w-full py-3 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-xl transition shadow-lg shadow-cyan-500/20"
             >
-              Muat Ulang & Reset Cache
+              Reload & Reset Cache
             </button>
           </div>
         </div>
